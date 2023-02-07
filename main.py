@@ -33,8 +33,7 @@ def register():
     if request.method == 'GET':
         return render_template('register.html')
     else:
-        username, password = [request.form.get(
-            p) for p in ['username', 'password']]
+        username, password = [request.form.get(p) for p in ['username', 'password']]
         register_user(username, get_password_hash(password))
         return redirect('/')
 
@@ -61,7 +60,7 @@ def get_password_hash(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def check_auth(token: str):
-    username, passwd = base64.b64decode(token).decode().split(':')
+    username, passwd = base64.b64decode(bytes.fromhex(token)).decode().split(':')
     return get_user(username, passwd)
 
 def get_user(name: str, passhash: str):
