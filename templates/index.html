@@ -7,6 +7,11 @@
     <title>Uptime Tracker</title>
 </head>
 <body>
-    <p>{{user}}</p>
+    <p>User: {{user}}</p>
+    <p>Data</p>
+    {% for el in data %}
+        <h4>{{el}}</h4>
+    {% endfor %}
+    <a href="/logout">Выйти</a>
 </body>
 </html>

@@ -25,7 +25,8 @@ def index():
         resp.delete_cookie('auth')
         return resp
     
-    return render_template('index.html', user=user)
+    sites = [(site, 'Достуен' if check_availability(site) else 'Недоступен') for site in load_sites_byUser(user[0])]
+    return render_template('index.html', user=user, data=sites)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -55,6 +56,11 @@ def login():
         resp.set_cookie('auth', auth)
         return resp
 
+@app.route('/logout', methods=['GET'])
+def logout():
+    resp = make_response(redirect('/'))
+    resp.delete_cookie('auth')
+    return resp
 
 def get_password_hash(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -79,11 +85,12 @@ def register_user(username: str, password: str) -> None:
 
 def load_sites_byUser(uid: int) -> list:
     with thread_lock:
-        cursor.execute(f'SELECT * FROM Sites WHERE UserId = {uid}')
-        return cursor.fetchall()
+        cursor.execute(f'SELECT SiteAddr FROM Sites WHERE UserId = {uid}')
+        return [s[0] for s in cursor.fetchall()]
 
 
 def save_site_byUser(uid: int, siteaddr: str) -> None:
+    siteaddr = siteaddr if siteaddr.startswith('https://') else 'https://' + siteaddr
     with thread_lock:
         cursor.execute(
             'INSERT INTO Sites (UserId, SiteAddr) VALUES (?, ?)', (uid, siteaddr, ))
