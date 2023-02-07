@@ -5,13 +5,20 @@ import os
 def create():
     connection = sqlite3.connect('Users.db')
     cursor = connection.cursor()
-    cursor.execute('''CREATE TABLE Users (
+    cursor.execute(
+'''CREATE TABLE Users (
+Id       INTEGER PRIMARY KEY AUTOINCREMENT
+                    UNIQUE
+                    NOT NULL,
+Username STRING  UNIQUE
+                    NOT NULL,
+Password STRING  NOT NULL
+);
+CREATE TABLE Sites (
     Id       INTEGER PRIMARY KEY AUTOINCREMENT
-                     UNIQUE
                      NOT NULL,
-    Username STRING  UNIQUE
-                     NOT NULL,
-    Password STRING  NOT NULL
+    UserId   INTEGER NOT NULL,
+    SiteAddr STRING  NOT NULL
 );
 ''')
     connection.commit()
