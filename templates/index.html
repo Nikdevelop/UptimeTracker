@@ -8,17 +8,17 @@
 </head>
 <body>
     {% if user %}
-        <p>User: {{user}}</p>
+        <p>User: {{ user }}</p>
         <p>Data:</p>
         {% for el in data %}
-            <li>{{el}}</li>
+            <li>{{ el }}</li>
         {% endfor %}
 
         <a href="/logout">Выйти</a>
     {% else %}
         <a href="/login">Войти</a>
     {% endif %}
-    
+
     <p>Добавление записи:</p>
     <form action="/create" method="post">
         <input type="text" name="siteaddr">
