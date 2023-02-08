@@ -25,7 +25,7 @@ def index():
         resp.delete_cookie('auth')
         return resp
     
-    sites = [(site, 'Достуен' if check_availability(site) else 'Недоступен') for site in load_sites_byUser(user[0])]
+    sites = [(site, 'Доступен' if check_availability(site[-1]) else 'Недоступен') for site in load_sites_byUser(user[0])]
     return render_template('index.html', user=user, data=sites)
 
 
@@ -50,7 +50,7 @@ def login():
         user = get_user(username, pass_hashed)
         if not user:
             return render_template('/login', error='Некорректное имя пользователя или пароль')
-        auth = base64.b64encode(f'{username}:{pass_hashed}'.encode()).hex()
+        auth = base64.b64encode(f'{username}\n{pass_hashed}'.encode()).hex()
 
         resp = make_response(redirect('/'))
         resp.set_cookie('auth', auth)
@@ -62,11 +62,40 @@ def logout():
     resp.delete_cookie('auth')
     return resp
 
+@app.route('/create/', methods=['POST'])
+def create():
+    authcookie = request.cookies.get('auth')
+    if not authcookie:
+        return flask.abort(403)
+    user = check_auth(authcookie)
+    if not user:
+        return flask.abort(401)
+    
+    save_site_byUser(user[0], request.form.get('siteaddr'))
+    return redirect(request.referrer or '/')
+
+@app.route('/delete/<int:siteid>', methods=['GET'])
+def delete(siteid: str):
+    authcookie = request.cookies.get('auth')
+    if not authcookie:
+        return flask.abort(403)
+    user = check_auth(authcookie)
+    if not user:
+        return flask.abort(401)
+    
+    can_user_remove_it = any((s[0], s[1]) == (siteid, user[0]) for s in load_sites_byUser(user[0]))
+    if not can_user_remove_it:
+        return flask.abort(403)
+    
+    delete_site_byUser(user[0], siteid)
+    return redirect(request.referrer or '/')
+
+
 def get_password_hash(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def check_auth(token: str):
-    username, passwd = base64.b64decode(bytes.fromhex(token)).decode().split(':')
+    username, passwd = base64.b64decode(bytes.fromhex(token)).decode().split('\n')
     return get_user(username, passwd)
 
 def get_user(name: str, passhash: str):
@@ -82,11 +111,14 @@ def register_user(username: str, password: str) -> None:
             'INSERT INTO Users (Username, Password) VALUES (?, ?)', (username, password, ))
         connection.commit()
 
+def delete_site_byUser(uid: int, siteid: int):
+    with thread_lock:
+        cursor.execute(f'DELETE FROM Sites WHERE UserId=? AND Id=?', (uid, siteid, ))
 
 def load_sites_byUser(uid: int) -> list:
     with thread_lock:
-        cursor.execute(f'SELECT SiteAddr FROM Sites WHERE UserId = {uid}')
-        return [s[0] for s in cursor.fetchall()]
+        cursor.execute(f'SELECT * FROM Sites WHERE UserId = {uid}')
+        return cursor.fetchall()
 
 
 def save_site_byUser(uid: int, siteaddr: str) -> None:
