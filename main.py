@@ -2,6 +2,7 @@ import hashlib
 import sqlite3
 import threading
 import base64
+import asyncio
 
 import flask
 import requests
@@ -25,8 +26,16 @@ def index():
         resp.delete_cookie('auth')
         return resp
     
-    sites = [(site, 'Доступен' if check_availability(site[-1]) else 'Недоступен') for site in load_sites_byUser(user[0])]
-    return render_template('index.html', user=user, data=sites)
+    # sites = [(site, 'Доступен' if check_availability(site) else 'Недоступен') for site in ]
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    tasks = []
+    for i in load_sites_byUser(user[0]):
+        tasks.append(asyncio.ensure_future(check_availability(i), loop=loop))
+
+    results = sorted([(b, 'Доступен' if a else 'Недоступен') for a, b in loop.run_until_complete(asyncio.gather(*tasks))], key=lambda x: x[0])
+    loop.close()
+    return render_template('index.html', user=user, data=results)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -129,15 +138,15 @@ def save_site_byUser(uid: int, siteaddr: str) -> None:
         connection.commit()
 
 
-def check_availability(site: str) -> bool:
+async def check_availability(site: str) -> bool:
     try:
-        response = requests.get(site)
+        response = requests.get(site[-1])
         if response.status_code == 200:
-            return True
+            return True, site
     except:
         pass
 
-    return False
+    return False, site
 
 
 if __name__ == '__main__':
