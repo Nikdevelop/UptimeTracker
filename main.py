@@ -1,13 +1,12 @@
+import base64
 import hashlib
 import sqlite3
 import threading
-import base64
-
 from concurrent.futures.thread import ThreadPoolExecutor
+
 import flask
 import requests
-from flask import (redirect, render_template, request, make_response)
-
+from flask import make_response, redirect, render_template, request
 
 thread_lock = threading.Lock()
 app = flask.Flask(__name__)
