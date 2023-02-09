@@ -9,6 +9,8 @@
 <body>
     {% if user %}
         <p>User: {{ user }}</p>
+        <a href="/logout">Выйти</a>
+
         <p>Data:</p>
         {% for el in data %}
             <li>
@@ -17,7 +19,6 @@
             </li>
         {% endfor %}
 
-        <a href="/logout">Выйти</a>
         <p>Добавление записи:</p>
         <form action="/create" method="post">
             <input type="text" name="siteaddr">
@@ -26,6 +27,7 @@
         </form>
     {% else %}
         <a href="/login">Войти</a>
+        <a href="/register">Зарегистрироваться</a>
     {% endif %}
 </body>
 </html>
