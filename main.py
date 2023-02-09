@@ -1,5 +1,4 @@
 import hashlib
-from queue import Queue
 import sqlite3
 import threading
 import base64
@@ -29,18 +28,14 @@ def index():
     
     q = []
     # sites = [(site, 'Доступен' if check_availability(site) else 'Недоступен') for site in load_sites_byUser(user[0])]
-    with ThreadPoolExecutor(max_workers=2) as executor:
+
+    with ThreadPoolExecutor() as executor:
         for s in load_sites_byUser(user[0]):
             executor.submit(check_availability, s, q)
-    
-    # tasks = []
-    # for i in load_sites_byUser(user[0]):
-    #     tasks.append(asyncio.ensure_future(check_availability(i)))
-    
-    # results = await asyncio.gather(*tasks)
-    # results = sorted([(b, 'Доступен' if a else 'Недоступен') for a, b in loop.run(check_all_sites(load_sites_byUser(user[0]), user))], key=lambda x: x[0])
 
-    return render_template('index.html', user=user, data=q)
+    results = sorted([(b, 'Доступен' if a else 'Недоступен') for a, b in q], key=lambda x: x[0][0])
+
+    return render_template('index.html', user=user, data=results)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -128,6 +123,7 @@ def register_user(username: str, password: str) -> None:
 def delete_site_byUser(uid: int, siteid: int):
     with thread_lock:
         cursor.execute(f'DELETE FROM Sites WHERE UserId=? AND Id=?', (uid, siteid, ))
+        connection.commit()
 
 def load_sites_byUser(uid: int) -> list:
     with thread_lock:

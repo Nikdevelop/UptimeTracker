@@ -11,7 +11,10 @@
         <p>User: {{ user }}</p>
         <p>Data:</p>
         {% for el in data %}
-            <li>{{ el }}</li>
+            <li>
+                {{ el }}
+                <a href="{{ '/delete/%s'%el[0][0] }}">Удалить</a>
+            </li>
         {% endfor %}
 
         <a href="/logout">Выйти</a>
