@@ -3,6 +3,7 @@ import sqlite3
 import threading
 import base64
 
+from concurrent.futures.thread import ThreadPoolExecutor
 import flask
 import requests
 from flask import (redirect, render_template, request, make_response)
@@ -25,8 +26,16 @@ def index():
         resp.delete_cookie('auth')
         return resp
     
-    sites = [(site, 'Доступен' if check_availability(site[-1]) else 'Недоступен') for site in load_sites_byUser(user[0])]
-    return render_template('index.html', user=user, data=sites)
+    q = []
+    # sites = [(site, 'Доступен' if check_availability(site) else 'Недоступен') for site in load_sites_byUser(user[0])]
+
+    with ThreadPoolExecutor() as executor:
+        for s in load_sites_byUser(user[0]):
+            executor.submit(check_availability, s, q)
+
+    results = sorted([(b, 'Доступен' if a else 'Недоступен') for a, b in q], key=lambda x: x[0][0])
+
+    return render_template('index.html', user=user, data=results)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -114,6 +123,7 @@ def register_user(username: str, password: str) -> None:
 def delete_site_byUser(uid: int, siteid: int):
     with thread_lock:
         cursor.execute(f'DELETE FROM Sites WHERE UserId=? AND Id=?', (uid, siteid, ))
+        connection.commit()
 
 def load_sites_byUser(uid: int) -> list:
     with thread_lock:
@@ -129,15 +139,16 @@ def save_site_byUser(uid: int, siteaddr: str) -> None:
         connection.commit()
 
 
-def check_availability(site: str) -> bool:
+def check_availability(site: str, q: list) -> bool:
     try:
-        response = requests.get(site)
+        response = requests.get(site[-1])
         if response.status_code == 200:
-            return True
+            q.append((True, site))
+            return
     except:
         pass
 
-    return False
+    q.append((False, site))
 
 
 if __name__ == '__main__':
