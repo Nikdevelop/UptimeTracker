@@ -26,6 +26,10 @@
             <input type="submit" value="Сохранить">
         </form>
     {% else %}
+        {% if message %}
+            <p>{{ message }}</p>
+        {% endif %}
+        <p>Пожалуйста, войдите или зарегистрируйте аккаунт для отслеживания статистики сайтов.</p>
         <a href="/login">Войти</a>
         <a href="/register">Зарегистрироваться</a>
     {% endif %}

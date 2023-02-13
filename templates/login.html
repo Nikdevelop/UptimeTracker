@@ -7,6 +7,9 @@
     <title>Вход в аккаунт</title>
 </head>
 <body>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
     <form method="post">
         <div>
             <p>Введите имя пользователя: </p>

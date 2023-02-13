@@ -8,6 +8,7 @@ import flask
 import requests
 from flask import make_response, redirect, render_template, request
 
+
 thread_lock = threading.Lock()
 app = flask.Flask(__name__)
 connection = sqlite3.connect('Users.db', check_same_thread=False)
@@ -17,7 +18,7 @@ cursor = connection.cursor()
 @app.route('/', methods=['GET'])
 def index():
     if not request.cookies.get('auth'):
-        return render_template('index.html', message='Пожалуйста, войдите или зарегистрируйте аккаунт для отслеживания статистики сайтов.')
+        return render_template('index.html')
     
     user = check_auth(request.cookies.get('auth'))
     if not user:
@@ -57,7 +58,7 @@ def login():
 
         user = get_user(username, pass_hashed)
         if not user:
-            return render_template('/login', error='Некорректное имя пользователя или пароль')
+            return render_template('login.html', error='Некорректное имя пользователя или пароль!')
         auth = base64.b64encode(f'{username}\n{pass_hashed}'.encode()).hex()
 
         resp = make_response(redirect('/'))
