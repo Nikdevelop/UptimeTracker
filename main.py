@@ -71,7 +71,7 @@ def logout():
     resp.delete_cookie('auth')
     return resp
 
-@app.route('/create/', methods=['POST'])
+@app.route('/create', methods=['POST'])
 def create():
     authcookie = request.cookies.get('auth')
     if not authcookie:
