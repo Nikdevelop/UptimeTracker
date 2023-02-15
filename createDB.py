@@ -5,7 +5,7 @@ import os
 def create():
     connection = sqlite3.connect('Users.db')
     cursor = connection.cursor()
-    cursor.execute(
+    cursor.executescript(
 '''CREATE TABLE Users (
 Id       INTEGER PRIMARY KEY AUTOINCREMENT
                     UNIQUE
