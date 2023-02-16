@@ -8,7 +8,6 @@ import flask
 import requests
 from flask import make_response, redirect, render_template, request
 
-
 thread_lock = threading.Lock()
 app = flask.Flask(__name__)
 connection = sqlite3.connect('Users.db', check_same_thread=False)
@@ -33,9 +32,9 @@ def index():
         for s in load_sites_byUser(user[0]):
             executor.submit(check_availability, s, q)
 
-    results = sorted([(b, 'Доступен' if a else 'Недоступен') for a, b in q], key=lambda x: x[0][0])
+    results = sorted([(b, a) for a, b in q], key=lambda x: x[0][0])
 
-    return render_template('index.html', user=user, data=results)
+    return render_template('index.html', user=user[1], data=results)
 
 
 @app.route('/register', methods=['GET', 'POST'])

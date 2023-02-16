@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uptime Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     {% if user %}
@@ -12,12 +13,21 @@
         <a href="/logout">Выйти</a>
 
         <p>Data:</p>
-        {% for el in data %}
-            <li>
-                {{ el }}
+        <div>
+            {% for el in data %}
+                <div class="service">
+                    {{ el[0][2] }}
+                    <div>
+                        {% if el[1] %}
+                            <span class="site_status status_available">Доступен</span>
+                            {% else %}
+                            <span class="site_status status_unavailable">Недоступен</span>
+                        {% endif %}
+                    </div>
+                </div>
                 <a href="{{ '/delete/%s' % el[0][0] }}">Удалить</a>
-            </li>
-        {% endfor %}
+            {% endfor %}
+        </div>
 
         <p>Добавление записи:</p>
         <form action="/create" method="post">
