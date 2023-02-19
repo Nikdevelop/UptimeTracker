@@ -18,13 +18,14 @@ cursor = connection.cursor()
 def index():
     if not request.cookies.get('auth'):
         return render_template('index.html')
-    
+
     user = check_auth(request.cookies.get('auth'))
     if not user:
-        resp = make_response(render_template('index.html', message='Некорректные данные для авторизации!'))
+        resp = make_response(render_template(
+            'index.html', message='Некорректные данные для авторизации!'))
         resp.delete_cookie('auth')
         return resp
-    
+
     q = []
     # sites = [(site, 'Доступен' if check_availability(site) else 'Недоступен') for site in load_sites_byUser(user[0])]
 
@@ -43,7 +44,10 @@ def register():
         return render_template('register.html')
     else:
         username, password = [request.form.get(p) for p in ['username', 'password']]
-        register_user(username, get_password_hash(password))
+        try:
+            register_user(username, get_password_hash(password))
+        except sqlite3.IntegrityError:
+            return render_template('register.html', error='Этот пользователь уже существует!')
         return redirect('/')
 
 
@@ -52,7 +56,8 @@ def login():
     if request.method == 'GET':
         return render_template('login.html')
     else:
-        username, password = [request.form.get(p) for p in ['username', 'password']]
+        username, password = [request.form.get(
+            p) for p in ['username', 'password']]
         pass_hashed = get_password_hash(password)
 
         user = get_user(username, pass_hashed)
@@ -64,11 +69,13 @@ def login():
         resp.set_cookie('auth', auth)
         return resp
 
+
 @app.route('/logout', methods=['GET'])
 def logout():
     resp = make_response(redirect('/'))
     resp.delete_cookie('auth')
     return resp
+
 
 @app.route('/create', methods=['POST'])
 def create():
@@ -78,9 +85,10 @@ def create():
     user = check_auth(authcookie)
     if not user:
         return flask.abort(401)
-    
+
     save_site_byUser(user[0], request.form.get('siteaddr'))
     return redirect(request.referrer or '/')
+
 
 @app.route('/delete/<int:siteid>', methods=['GET'])
 def delete(siteid: str):
@@ -90,11 +98,12 @@ def delete(siteid: str):
     user = check_auth(authcookie)
     if not user:
         return flask.abort(401)
-    
-    can_user_remove_it = any((s[0], s[1]) == (siteid, user[0]) for s in load_sites_byUser(user[0]))
+
+    can_user_remove_it = any((s[0], s[1]) == (siteid, user[0])
+                             for s in load_sites_byUser(user[0]))
     if not can_user_remove_it:
         return flask.abort(403)
-    
+
     delete_site_byUser(user[0], siteid)
     return redirect(request.referrer or '/')
 
@@ -102,9 +111,12 @@ def delete(siteid: str):
 def get_password_hash(password: str):
     return hashlib.sha256(password.encode()).hexdigest()
 
+
 def check_auth(token: str):
-    username, passwd = base64.b64decode(bytes.fromhex(token)).decode().split('\n')
+    username, passwd = base64.b64decode(
+        bytes.fromhex(token)).decode().split('\n')
     return get_user(username, passwd)
+
 
 def get_user(name: str, passhash: str):
     with thread_lock:
@@ -119,10 +131,13 @@ def register_user(username: str, password: str) -> None:
             'INSERT INTO Users (Username, Password) VALUES (?, ?)', (username, password, ))
         connection.commit()
 
+
 def delete_site_byUser(uid: int, siteid: int):
     with thread_lock:
-        cursor.execute(f'DELETE FROM Sites WHERE UserId=? AND Id=?', (uid, siteid, ))
+        cursor.execute(
+            f'DELETE FROM Sites WHERE UserId=? AND Id=?', (uid, siteid, ))
         connection.commit()
+
 
 def load_sites_byUser(uid: int) -> list:
     with thread_lock:
@@ -131,7 +146,8 @@ def load_sites_byUser(uid: int) -> list:
 
 
 def save_site_byUser(uid: int, siteaddr: str) -> None:
-    siteaddr = siteaddr if siteaddr.startswith('https://') else 'https://' + siteaddr
+    siteaddr = siteaddr if siteaddr.startswith(
+        'https://') else 'https://' + siteaddr
     with thread_lock:
         cursor.execute(
             'INSERT INTO Sites (UserId, SiteAddr) VALUES (?, ?)', (uid, siteaddr, ))
